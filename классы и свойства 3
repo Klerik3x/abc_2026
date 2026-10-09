@@ -1,0 +1,38 @@
+#Создайте класс User(email, password). Свойство email должно позволять чтение и запись, а при присваивании строки без @ вызывать ValueError, сохраняя прежний адрес. Та же проверка действует при создании пользователя.
+
+#Свойство password разрешает только запись: чтение вызывает AttributeError. Храните хеш пароля, можно использовать hash(). Метод check_password(password) возвращает True для текущего пароля и False для другого.
+
+#Добавьте пример с адресом test@example.com и паролем secret: выведите адрес и результаты проверки secret и wrong.
+
+class User:
+    def __init__(self, email, password):
+        self._email = None
+        self.email = email  # вызовет сеттер, проверит @
+        self._password_hash = hash(password)
+
+    @property
+    def email(self):
+        return self._email
+
+    @email.setter
+    def email(self, value):
+        if '@' not in value:
+            raise ValueError("Email должен содержать @")
+        self._email = value
+
+    @property
+    def password(self):
+        raise AttributeError("Чтение пароля запрещено")
+
+    @password.setter
+    def password(self, value):
+        self._password_hash = hash(value)
+
+    def check_password(self, password):
+        return hash(password) == self._password_hash
+
+
+u = User("test@example.com", "secret")
+print(u.email)
+print(u.check_password("secret"))
+print(u.check_password("wrong"))

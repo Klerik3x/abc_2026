@@ -1,0 +1,83 @@
+import random
+import datetime
+from db import DICT_DEFENITION_WORD
+
+
+class Yakubovich:
+    def __init__(self):
+        self.name = input()
+        self.word = ""
+        self.mask = []
+        self.session = ""
+        self.finished = False
+
+    def _generate_key(self):
+        return "lesson-session"
+
+    def print_menu(self):
+        while not self.finished:
+            print("1 - Новая партия")
+            print("2 - Загрузка")
+            print("3 - Выход")
+            choice = input()
+            if choice == "1":
+                self.start_game()
+            elif choice == "2":
+                self.load_game()
+            elif choice == "3":
+                self.end_game()
+
+    def start_game(self):
+        self.word = random.choice(list(DICT_DEFENITION_WORD.keys()))
+        self.mask = ['#'] * len(self.word)
+        self.session = self._generate_key()
+        self._play()
+
+    def _play(self):
+        while '#' in self.mask:
+            command = input()
+            if command == "2":
+                self.save_game()
+                continue
+            if len(command) != 1:
+                continue
+            letter = command.lower()
+            if letter in self.word:
+                for i, ch in enumerate(self.word):
+                    if ch == letter:
+                        self.mask[i] = letter
+            print(self.mask)
+        self.end_game()
+
+    def save_game(self):
+        date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        mask_str = ''.join(self.mask)
+        with open('save_game.csv', 'a', encoding='utf-8') as f:
+            f.write(f"{date}|{self.session}|{self.name}|{self.word}|{mask_str}\n")
+
+    def load_game(self):
+        with open('save_game.csv', 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        player_saves = []
+        for line in lines:
+            parts = line.strip().split('|')
+            if len(parts) >= 5 and parts[2].strip() == self.name.strip():
+                player_saves.append(parts)
+
+        for idx, parts in enumerate(player_saves):
+            print(f"{idx} - {parts[3]} | {parts[4]}")
+
+        choice = int(input())
+        parts = player_saves[choice]
+        self.session = parts[1]
+        self.word = parts[3]
+        self.mask = list(parts[4])
+        self._play()
+
+    def end_game(self):
+        self.finished = True
+
+
+game = Yakubovich()
+game.print_menu()

@@ -1,0 +1,99 @@
+#Создайте абстрактный класс DataExporter: абстрактный метод export(data), метод get_format_name() и общий метод validate_data(data), возвращающий True для непустого списка и False для пустого.
+
+#Наследники выводят данные в консоль. При пустом списке export вызывает ValueError.
+
+#JSONExporter: список словарей в JSON; в каждой записи добавьте export_timestamp — текущее время в формате ISO 8601. Название формата — JSON.
+#CSVExporter: заголовки из ключей первого словаря, затем записи в том же порядке. Название — CSV.
+#XMLExporter: корень <report>, внутри по элементу <item> на запись, внутри него элементы с именами ключей и текстом значений. Название — XML.
+#Используйте стандартные модули Python. Добавьте пример с данными ниже: перед каждым экспортом выведите его формат, затем вызовите export.
+
+#sales_data = [
+#    {'product': 'Laptop', 'price': 1000, 'quantity': 2},
+#    {'product': 'Mouse', 'price': 50, 'quantity': 10},
+#]
+
+from abc import ABC, abstractmethod
+import json
+import csv
+import io
+from datetime import datetime
+import xml.etree.ElementTree as ET
+
+
+class DataExporter(ABC):
+    @abstractmethod
+    def export(self, data):
+        pass
+
+    def get_format_name(self):
+        pass
+
+    def validate_data(self, data):
+        return bool(data)
+
+
+class JSONExporter(DataExporter):
+    def get_format_name(self):
+        return "JSON"
+
+    def export(self, data):
+        if not self.validate_data(data):
+            raise ValueError("Данные пусты")
+
+        timestamp = datetime.now().isoformat()
+        enriched = []
+        for record in data:
+            new_record = dict(record)
+            new_record["export_timestamp"] = timestamp
+            enriched.append(new_record)
+
+        print(json.dumps(enriched, ensure_ascii=False, indent=2))
+
+
+class CSVExporter(DataExporter):
+    def get_format_name(self):
+        return "CSV"
+
+    def export(self, data):
+        if not self.validate_data(data):
+            raise ValueError("Данные пусты")
+
+        headers = list(data[0].keys())
+        buffer = io.StringIO()
+        writer = csv.DictWriter(buffer, fieldnames=headers)
+        writer.writeheader()
+        for record in data:
+            writer.writerow(record)
+        print(buffer.getvalue().strip())
+
+
+class XMLExporter(DataExporter):
+    def get_format_name(self):
+        return "XML"
+
+    def export(self, data):
+        if not self.validate_data(data):
+            raise ValueError("Данные пусты")
+
+        root = ET.Element("report")
+        for record in data:
+            item = ET.SubElement(root, "item")
+            for key, value in record.items():
+                child = ET.SubElement(item, key)
+                child.text = str(value)
+
+        ET.indent(root)
+        print(ET.tostring(root, encoding="unicode"))
+
+
+sales_data = [
+    {'product': 'Laptop', 'price': 1000, 'quantity': 2},
+    {'product': 'Mouse', 'price': 50, 'quantity': 10},
+]
+
+exporters = [JSONExporter(), CSVExporter(), XMLExporter()]
+
+for exporter in exporters:
+    print(exporter.get_format_name())
+    exporter.export(sales_data)
+    print()
